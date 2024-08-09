@@ -30,6 +30,15 @@ def generate_gemini_content(transcript_text, prompt):
     response=model.generate_content(prompt+transcript_text)
     return response.text
 
+prompt2='''You are a Youtube Claims generator. You will be provided a summary of a youtube video in detail, especially a health and fitness related content of a youtube video. You have to 
+generate claims for our health claims verification project, the claims needs to given in points and in proper order with even medical terminology. Please provide the claims for the text
+given here :'''
+
+def generate_gemini_claims(summary, prompt):
+    model=genai.GenerativeModel('gemini-pro')
+    response=model.generate_content(prompt+summary)
+    return response.text
+
 # youtube_link=str(input("Give Link: "))
 # transcript_text=extract_transript_details(youtube_link)
 
@@ -37,19 +46,20 @@ def generate_gemini_content(transcript_text, prompt):
 
 
 
-st.title("Youtube Transcript Summarizer ")
-youtube_link=st.text_input("Enter Youtube Video Link:")
+st.title("Youtube Health Claims Generator")
+youtube_link=st.text_input("Enter Youtube Video Link for a health related video:")
 
 if youtube_link:
     video_id=youtube_link.split("=")[1]
     # print(video_id)
     st.markdown("Verify the link with the thumbnail below and click the Get Detail Notes Button")
     st.image(f"http://img.youtube.com/vi/{video_id}/hqdefault.jpg", use_column_width=True)
-if st.button("Get Detail Notes"):
+if st.button("Get Detail Claims"):
     transcript_text=extract_transript_details(youtube_link)
 
     if transcript_text: 
         summary=generate_gemini_content(transcript_text, prompt)
+        claims=generate_gemini_claims(summary, prompt2)
         # print(video_id)
-        st.markdown("## Detailed Summary")
-        st.write(summary)
+        st.markdown("## Claims stated in the Video")
+        st.write(claims)
