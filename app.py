@@ -15,7 +15,7 @@ load_dotenv()
 
 # Configure Google Gemini API key
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-ChatOpenAI.configure(api_key=os.getenv("OPENAI_API_KEY"))
+langchain_openai.configure(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Prompts
 prompt = """You are a Youtube video summarizer. You will be taking the transcript text and summarizing the entire video to give a useful summary that provides an entire picture/idea to the user about the video. Please provide the summary of the text given here: """
