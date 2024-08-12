@@ -5,3 +5,5 @@ python-dotenv
 pathlib
 langchain
 langchain-community
+langchain_openai
+openai
