@@ -3,3 +3,5 @@ streamlit
 google-generativeai
 python-dotenv
 pathlib
+langchain
+langchain-community
