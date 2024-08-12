@@ -66,7 +66,15 @@ gpt_prompt = PromptTemplate(
 )
 
 # Initialize the chat model
-chatgpt = ChatOpenAI(model_name="gpt-4o-mini", temperature=0.1, max_tokens=500)
+try:
+    chatgpt = ChatOpenAI(
+        model_name="gpt-4",  # Replace with the correct model name
+        temperature=0.1, 
+        max_tokens=500
+    )
+except Exception as e:
+    st.error(f"Error initializing ChatOpenAI: {e}")
+    chatgpt = None
 chain = LLMChain(gpt_prompt | chatgpt | parser)
 
 # Streamlit UI
