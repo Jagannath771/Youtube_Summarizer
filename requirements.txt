@@ -7,3 +7,12 @@ langchain
 langchain-community
 langchain_openai
 openai
+langchain_chroma 
+langchain_core 
+biopython 
+fuzzywuzzy 
+python-Levenshtein
+pandas
+aiohttp
+scikit-learn
+-e .
