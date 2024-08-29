@@ -21,11 +21,13 @@ def extract_transript_details(youtube_video_url):
     return transcript
 
 def generate_gemini_content(transcript_text, prompt):
-    model=genai.GenerativeModel("gemini-pro")
-    response=model.generate_content(prompt+transcript_text)
+    model = genai.GenerativeModel("gemini-pro")
+    model.temperature = 0
+    response = model.generate_content(prompt + transcript_text)
     return response.text
 
 def generate_gemini_claims(summary, prompt):
-    model=genai.GenerativeModel('gemini-pro')
-    response=model.generate_content(summary+prompt)
+    model = genai.GenerativeModel('gemini-pro')
+    model.temperature = 0
+    response = model.generate_content(summary + prompt)
     return response.text

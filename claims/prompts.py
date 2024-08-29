@@ -3,9 +3,9 @@
 YoutubeSummary_task="""You are a Youtube video summarizer. You will be taking the trascript text and summarizing the entire video and give a useful summary which gives an entire picture/idea to the user
 about the video. Please provide the summary of the text given here : """
 
-ClaimGenerator_taks='''You are a Youtube Claims generator. You will be provided a summary of a youtube video in detail, especially a health and fitness related content of a youtube video. You have to
-generate top 5 claims for our health claims verification project. The claims needs to be given in single line points separated by * and in proper order with proper and legit medical terminology. Structure the sentences as Subject-verb-object (SVO) format. Please provide the claims for the text
-given here :'''
+ClaimGenerator_taks='''You are a Youtube Claims generator. You will be provided a summary of a youtube video in detail, especially a health and fitness related content of a youtube video. You have to 
+generate claims for our health claims verification project, the claims needs to given in points and in proper order with even medical terminology. Please provide the claims for the texxt for our health claims verification project. The claims needs to be given in single line points separated by * and in proper order with standard medical terminology. Structure the sentences as Subject-verb-object (SVO) format. Please provide the claims for the text
+given here'''
 
 # Define your desired data structure - like a python data class.
 scientific_validation_summary_task="""Provide scientific Validation summary in less than 25 words:**

@@ -15,7 +15,7 @@ from claims.Tokenizer import *
 load_dotenv()
 
 if __name__ == "__main__":
-    genai.configure(api_key=os.getenv('GOOGLE_API_KEY'))
+    genai.configure(api_key="")
     transcript_text = extract_transript_details("https://www.youtube.com/watch?v=Y8HIFRPU6pM")
     summary=generate_gemini_content(transcript_text,YoutubeSummary_task)
     claims=generate_gemini_claims(summary, ClaimGenerator_taks)
@@ -27,10 +27,10 @@ if __name__ == "__main__":
     keywords_list = extract_keywords_and_tfidf(claims_list)
     # print(keywords_list)
     email = "nithinpradeep38@gmail.com"
-    api_key = os.getenv('PUBMED_API_KEY')
+    api_key = ""#os.getenv('PUBMED_API_KEY')
     # print(api_key)
     # Fetch the API key from environment variables
-    api_key2 = os.getenv('OPENAI_API_KEY')
+    api_key2 = ""#os.getenv('OPENAI_API_KEY')
 
     # if api_key2 is None:
     #     raise ValueError("The environment variable 'OPENAI_API_KEY' is not set. Please set it before running the script.")
@@ -40,7 +40,8 @@ if __name__ == "__main__":
     # os.environ['OPENAI_API_KEY']=os.getenv('OPENAI_API_KEY')
     print(f"There are {len(keywords_list)} claims in the given video. Below are the validation for each claim")
     for i in range(len(keywords_list)): 
-        print(i)
+        print(i+1)
+        print(keywords_list[i])
     # OpenAI embedding
         openai_embed_model = OpenAIEmbeddings(model='text-embedding-3-small')
         # claim="Coffee helps reduce chances of liver cancer "
@@ -49,13 +50,15 @@ if __name__ == "__main__":
         date_range = '("2010/03/01"[Date - Create] : "2024/07/31"[Date - Create])'
         
         logging.info("Scraping articles from Pubmed")
+        # print(2)
         scraper = PubMedScraper(email, api_key)
+        # print(3)
         df = scraper.run(topics, date_range)
-        
+        # print(df.head())
         logging.info("Ranking articles based on journal rankings")
         df1= pd.read_csv('journal_rankings.csv')
         df_ranked= ranked_df(df,df1)
-        
+        # print(df_ranked)
         logging.info("Loading documents into LangChain object")
         documents= load_documents(df_ranked)
         
@@ -71,6 +74,7 @@ if __name__ == "__main__":
         logging.info("Running a query using RAG and GPT-4o-mini")  # run a query using RAG and GPT-4o-mini to validate the claims.
         result_qa= rag_processor.process_query_retrieval_qa(claim=claims_list[i])
         logging.info(f"Final response: {result_qa}")  # print the final response from the RAG chain and GPT-4o-mini prompt.  # print the final response from the RAG chain and GPT-4o-mini prompt.  # print the final response from the RAG chain and GPT-4o-mini prompt.  # print the final response from the RAG chain and GPT-4o-mini prompt.  # print the final response from the R
+        print(f"For the claim {claims_list[i]} the validation summary is")
         print(result_qa)
     
     
