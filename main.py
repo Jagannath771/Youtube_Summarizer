@@ -15,22 +15,22 @@ from claims.Tokenizer import *
 load_dotenv()
 
 if __name__ == "__main__":
-    genai.configure(api_key="")
+    genai.configure(api_key="AIzaSyD-W0BCGI-EwCAlbRYlCyHkAbV-e3PjeXo")
     transcript_text = extract_transript_details("https://www.youtube.com/watch?v=Y8HIFRPU6pM")
     summary=generate_gemini_content(transcript_text,YoutubeSummary_task)
     claims=generate_gemini_claims(summary, ClaimGenerator_taks)
     # print(claims)
     claims_list = [line.strip(' * , . 1234567890') for line in claims.split('\n') if line.strip()]
-
+    
 # Print the resulting array
     # print(claims_list)
-    keywords_list = extract_keywords_and_tfidf(claims_list)
+    # keywords_list = extract_keywords_and_tfidf(claims_list)
     # print(keywords_list)
     email = "nithinpradeep38@gmail.com"
-    api_key = ""#os.getenv('PUBMED_API_KEY')
+    api_key = "3c5ac885c60d2ae3a1c5b15a1ec162cfd409"#os.getenv('PUBMED_API_KEY')
     # print(api_key)
     # Fetch the API key from environment variables
-    api_key2 = ""#os.getenv('OPENAI_API_KEY')
+    api_key2 = "sk-qWdGe6C-13tm9IUhjQddDGl8r0fOBtmpdF1D-QB0aWT3BlbkFJrxC1-0kT0wrR_7zPJZ3vgcIYHpRcQvfOH3F5esqskA"#os.getenv('OPENAI_API_KEY')
 
     # if api_key2 is None:
     #     raise ValueError("The environment variable 'OPENAI_API_KEY' is not set. Please set it before running the script.")
@@ -38,15 +38,20 @@ if __name__ == "__main__":
     # Set the API key for your application
     os.environ['OPENAI_API_KEY'] = api_key2
     # os.environ['OPENAI_API_KEY']=os.getenv('OPENAI_API_KEY')
-    print(f"There are {len(keywords_list)} claims in the given video. Below are the validation for each claim")
-    for i in range(len(keywords_list)): 
+    print(f"There are {len(claims_list)} claims in the given video. Below are the validation for each claim")
+    for i in range(len(claims_list)): 
+        response= generate_gemini_keywords(claims= claims_list[i], keyword_prompt=Max_three_words_extraction)
         print(i+1)
-        print(keywords_list[i])
+        # if response:
+        #     print(response)
+        # else:
+        #     print("No Valid Response recieved")
+        #     continue
     # OpenAI embedding
         openai_embed_model = OpenAIEmbeddings(model='text-embedding-3-small')
         # claim="Coffee helps reduce chances of liver cancer "
         logging.info(f"Claim being assessed: {claims_list[i]}")
-        topics = keywords_list[i]
+        topics = extract_keywords(response)
         date_range = '("2010/03/01"[Date - Create] : "2024/07/31"[Date - Create])'
         
         logging.info("Scraping articles from Pubmed")
@@ -54,9 +59,11 @@ if __name__ == "__main__":
         scraper = PubMedScraper(email, api_key)
         # print(3)
         df = scraper.run(topics, date_range)
+        # print(df)
         # print(df.head())
         logging.info("Ranking articles based on journal rankings")
-        df1= pd.read_csv('journal_rankings.csv')
+        df1= pd.read_csv('Youtube_Summarizer//journal_rankings.csv')
+        # print(df1)
         df_ranked= ranked_df(df,df1)
         # print(df_ranked)
         logging.info("Loading documents into LangChain object")

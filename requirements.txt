@@ -15,4 +15,4 @@ python-Levenshtein
 pandas
 aiohttp
 scikit-learn
--e .
+

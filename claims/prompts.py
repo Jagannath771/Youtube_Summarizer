@@ -4,9 +4,9 @@ YoutubeSummary_task="""You are a Youtube video summarizer. You will be taking th
 about the video. Please provide the summary of the text given here : """
 
 ClaimGenerator_taks='''You are a Youtube Claims generator. You will be provided a summary of a youtube video in detail, especially a health and fitness related content of a youtube video. You have to 
-generate claims for our health claims verification project, the claims needs to given in points and in proper order with even medical terminology. Please provide the claims for the texxt for our health claims verification project. The claims needs to be given in single line points separated by * and in proper order with standard medical terminology. Structure the sentences as Subject-verb-object (SVO) format. Please provide the claims for the text
-given here'''
-
+generate claims for our health claims verification project, the claims needs to given in points and in proper order with standard medical terminology. Please provide the claims for the text for our health claims verification project. The claims needs to be given in single line points separated by * and in proper order with standard medical terminology without any stop words or timing words. Structure the sentences as Subject-verb-object (SVO) format. Please provide the claims for the text
+given here:'''
+#  only the most important 
 # Define your desired data structure - like a python data class.
 scientific_validation_summary_task="""Provide scientific Validation summary in less than 25 words:**
    - Conduct a thorough review of the retrieved context for studies related to the provided claim.
@@ -32,3 +32,6 @@ claim= {claim}
 context= {context}
 Format Instructions: {format_instructions}
 """
+
+Max_three_words_extraction="""You are a medical researcher who wants to check the validity of the following claim by searching for articles from pubmed. 
+Extract at most 3 medical/health/nutrition related keywords summarizing the claim. The keywords should be single word as much as possible"""
