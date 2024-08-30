@@ -8,7 +8,7 @@ from langchain_openai import ChatOpenAI
 # from google.generativeai.errors import GenerativeAIError
 
 model_config = {
-  "temperature": 0.1,
+  "temperature": 0,
   "top_p": 1,
   "top_k": 1,
 }
@@ -70,3 +70,8 @@ def generate_gemini_keywords(claims, keyword_prompt):
         print(f"An unexpected error occurred: {e}")
         # Log the error or take corrective action
         return None
+    
+def generate_gemini_results(claims, prompt):
+    model = genai.GenerativeModel('gemini-pro', generation_config=model_config)
+    response = model.generate_content(claims + prompt)
+    return response.text

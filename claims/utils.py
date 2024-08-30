@@ -27,7 +27,6 @@ def ranked_df(df, df1):
     df1: The SCImago journal rank, a reputable measure of prestige of scholarly journals
     """
     choices= df1['Journal'].tolist() #create a list of names from rankings
-
     df[['best_match', 'score']]= df['Journal'].apply(lambda x: get_best_match(x, choices, scorer=fuzz.ratio)) #apply fuzzy match to journal names 
 
     merged_df = pd.merge(df, df1, left_on='best_match', right_on='Journal', how='left')

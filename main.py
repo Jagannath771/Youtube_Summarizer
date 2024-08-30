@@ -12,6 +12,7 @@ from claims import  logging
 from claims.prompts import *
 from claims.claim_generator import *
 from claims.Tokenizer import *
+from claims.PromptEngineering import *
 load_dotenv()
 
 if __name__ == "__main__":
@@ -59,29 +60,35 @@ if __name__ == "__main__":
         scraper = PubMedScraper(email, api_key)
         # print(3)
         df = scraper.run(topics, date_range)
-        # print(df)
-        # print(df.head())
-        logging.info("Ranking articles based on journal rankings")
-        df1= pd.read_csv('Youtube_Summarizer//journal_rankings.csv')
-        # print(df1)
-        df_ranked= ranked_df(df,df1)
-        # print(df_ranked)
-        logging.info("Loading documents into LangChain object")
-        documents= load_documents(df_ranked)
-        
-        logging.info("Creating an in-memory vector store")  # create an in-memory vector store with the documents and embeddings
-        in_memory_store = InMemoryVectorStore(documents, openai_embed_model)
-        
-        logging.info("Creating the custom retriever object")
-        custom_retriever= CustomRetriever(vectorstore= in_memory_store)
-        
-        logging.info("Setting up the RAG chain")  # setup the RAG chain using the custom retriever and GPT-4o-mini prompt
-        rag_processor= RAGQueryProcessor(custom_retriever=custom_retriever,gpt_prompt_txt= gpt_prompt_txt)
-        
-        logging.info("Running a query using RAG and GPT-4o-mini")  # run a query using RAG and GPT-4o-mini to validate the claims.
-        result_qa= rag_processor.process_query_retrieval_qa(claim=claims_list[i])
-        logging.info(f"Final response: {result_qa}")  # print the final response from the RAG chain and GPT-4o-mini prompt.  # print the final response from the RAG chain and GPT-4o-mini prompt.  # print the final response from the RAG chain and GPT-4o-mini prompt.  # print the final response from the RAG chain and GPT-4o-mini prompt.  # print the final response from the R
-        print(f"For the claim {claims_list[i]} the validation summary is")
-        print(result_qa)
+        if len(df)==0:
+            claims_formatted= {"claim": claims_list[i]}
+            result_qa=generate_chain_results1(claims_formatted)
+            logging.info(f"Final response: {result_qa}") 
+            print(result_qa)
+        else:
+            # print(df)
+            # print(df.head())
+            logging.info("Ranking articles based on journal rankings")
+            df1= pd.read_csv('Youtube_Summarizer//journal_rankings.csv')
+            # print(df1)
+            df_ranked= ranked_df(df,df1)
+            # print(df_ranked)
+            logging.info("Loading documents into LangChain object")
+            documents= load_documents(df_ranked)
+            
+            logging.info("Creating an in-memory vector store")  # create an in-memory vector store with the documents and embeddings
+            in_memory_store = InMemoryVectorStore(documents, openai_embed_model)
+            
+            logging.info("Creating the custom retriever object")
+            custom_retriever= CustomRetriever(vectorstore= in_memory_store)
+            
+            logging.info("Setting up the RAG chain")  # setup the RAG chain using the custom retriever and GPT-4o-mini prompt
+            rag_processor= RAGQueryProcessor(custom_retriever=custom_retriever,gpt_prompt_txt= gpt_prompt_txt)
+            
+            logging.info("Running a query using RAG and GPT-4o-mini")  # run a query using RAG and GPT-4o-mini to validate the claims.
+            result_qa= rag_processor.process_query_retrieval_qa(claim=claims_list[i])
+            logging.info(f"Final response: {result_qa}")  # print the final response from the RAG chain and GPT-4o-mini prompt.  # print the final response from the RAG chain and GPT-4o-mini prompt.  # print the final response from the RAG chain and GPT-4o-mini prompt.  # print the final response from the RAG chain and GPT-4o-mini prompt.  # print the final response from the R
+            print(f"For the claim {claims_list[i]} the validation summary is")
+            print(result_qa)
     
     
