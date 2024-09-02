@@ -61,9 +61,11 @@ if __name__ == "__main__":
         # print(3)
         df = scraper.run(topics, date_range)
         if len(df)==0:
+            print("LLM output")
             claims_formatted= {"claim": claims_list[i]}
             result_qa=generate_chain_results1(claims_formatted)
             logging.info(f"Final response: {result_qa}") 
+            print(f"For the claim ->{claims_list[i]}, the validation summary is")
             print(result_qa)
         else:
             # print(df)
@@ -88,7 +90,7 @@ if __name__ == "__main__":
             logging.info("Running a query using RAG and GPT-4o-mini")  # run a query using RAG and GPT-4o-mini to validate the claims.
             result_qa= rag_processor.process_query_retrieval_qa(claim=claims_list[i])
             logging.info(f"Final response: {result_qa}")  # print the final response from the RAG chain and GPT-4o-mini prompt.  # print the final response from the RAG chain and GPT-4o-mini prompt.  # print the final response from the RAG chain and GPT-4o-mini prompt.  # print the final response from the RAG chain and GPT-4o-mini prompt.  # print the final response from the R
-            print(f"For the claim {claims_list[i]} the validation summary is")
+            print(f"For the claim ->{claims_list[i]}, the validation summary is")
             print(result_qa)
     
     
