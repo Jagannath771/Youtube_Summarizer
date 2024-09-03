@@ -3,7 +3,7 @@
 YoutubeSummary_task="""You are a Youtube video summarizer. You will be taking the trascript text and summarizing the entire video and give a useful summary which gives an entire picture/idea to the user
 about the video. Please provide the summary of the text given here : """
 
-ClaimGenerator_taks='''You are a Youtube Claims generator. You will be provided a summary of a youtube video in detail, especially a health and fitness related content of a youtube video. You have to 
+ClaimGenerator_task='''You are a Youtube Claims generator. You will be provided a summary of a youtube video in detail, especially a health and fitness related content of a youtube video. You have to 
 generate claims for only the most important our health claims verification project, the claims needs to given in points and in proper order with standard medical terminology. Please provide the claims for the text for our health claims verification project. The claims needs to be given in single line points separated by * and in proper order with standard medical terminology without any stop words or timing words. Structure the sentences as Subject-verb-object (SVO) format. Please provide the claims for the text
 given here:'''
 #  only the most important 

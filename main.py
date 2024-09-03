@@ -17,7 +17,7 @@ load_dotenv()
 
 if __name__ == "__main__":
     genai.configure(api_key="AIzaSyD-W0BCGI-EwCAlbRYlCyHkAbV-e3PjeXo")
-    transcript_text = extract_transript_details("https://www.youtube.com/watch?v=Y8HIFRPU6pM")
+    transcript_text = extract_transript_details("https://www.youtube.com/watch?v=LDBeA9uJfI8")
     summary=generate_gemini_content(transcript_text,YoutubeSummary_task)
     claims=generate_gemini_claims(summary, ClaimGenerator_taks)
     # print(claims)
