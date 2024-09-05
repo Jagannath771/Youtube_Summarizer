@@ -17,9 +17,9 @@ load_dotenv()
 
 if __name__ == "__main__":
     genai.configure(api_key="AIzaSyD-W0BCGI-EwCAlbRYlCyHkAbV-e3PjeXo")
-    transcript_text = extract_transript_details("https://www.youtube.com/watch?v=LDBeA9uJfI8")
+    transcript_text = extract_transript_details("https://www.youtube.com/watch?v=mVWSWc--zGE")
     summary=generate_gemini_content(transcript_text,YoutubeSummary_task)
-    claims=generate_gemini_claims(summary, ClaimGenerator_taks)
+    claims=generate_gemini_claims(summary, ClaimGenerator_task)
     # print(claims)
     claims_list = [line.strip(' * , . 1234567890') for line in claims.split('\n') if line.strip()]
     
@@ -43,11 +43,12 @@ if __name__ == "__main__":
     for i in range(len(claims_list)): 
         response= generate_gemini_keywords(claims= claims_list[i], keyword_prompt=Max_three_words_extraction)
         print(i+1)
-        # if response:
-        #     print(response)
-        # else:
-        #     print("No Valid Response recieved")
-        #     continue
+        # print(claims_list[i])
+        if response:
+            print(response)
+        else:
+            print("No Valid Response recieved")
+            continue
     # OpenAI embedding
         openai_embed_model = OpenAIEmbeddings(model='text-embedding-3-small')
         # claim="Coffee helps reduce chances of liver cancer "
@@ -71,7 +72,7 @@ if __name__ == "__main__":
             # print(df)
             # print(df.head())
             logging.info("Ranking articles based on journal rankings")
-            df1= pd.read_csv('Youtube_Summarizer//journal_rankings.csv')
+            df1= pd.read_csv('C://Users//user//Documents//YTSummarizerGit_rep//Youtube_Summarizer//journal_rankings.csv')
             # print(df1)
             df_ranked= ranked_df(df,df1)
             # print(df_ranked)

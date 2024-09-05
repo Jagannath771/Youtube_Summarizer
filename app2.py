@@ -25,21 +25,26 @@ from claims.prompts import *
 from claims.claim_generator import *
 from claims.Tokenizer import *
 from claims.PromptEngineering import *
+from youtube_transcript_api._errors import *
 
 # Load environment variables
 load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 # langchain_openai.configure(api_key=os.getenv("OPENAI_API_KEY"))
-email = "nithinpradeep38@gmail.com"
+email = "karthikamaravadi1234@gmail.com"
 api_key = os.getenv('PUBMED_API_KEY')
 
 st.title("Youtube Health Claims Validator")
 youtube_link = st.text_input("Enter Youtube Video Link for a health-related video:")
 search_button=st.button("🔍")
-if youtube_link or search_button:
-    video_id = youtube_link.split("v=")[1]
-    st.markdown("Verify the link with the thumbnail below and click the 'Get Detail Notes' Button")
-    st.image(f"http://img.youtube.com/vi/{video_id}/hqdefault.jpg", use_column_width=True)
+try:
+    if youtube_link or search_button:
+         video_id = youtube_link.split("v=")[1]
+         st.markdown("Verify the link with the thumbnail below and click the 'Get Detail Notes' Button")
+         st.image(f"http://img.youtube.com/vi/{video_id}/hqdefault.jpg", use_column_width=True)
+except IndexError:
+            st.error("Please provide a youtube link for validation!")
+
 if st.button("Get Detail Claims and validate"):
     placeholder = st.empty()
     with placeholder.container():
@@ -49,6 +54,9 @@ if st.button("Get Detail Claims and validate"):
                 summary = generate_gemini_content(transcript_text, YoutubeSummary_task)
             if summary:
                 claims = generate_gemini_claims(summary, ClaimGenerator_task)
+                if not is_health_video(claims):
+                    st.error("Please provide link of only a health related video in English!")
+                    st.stop()
                 if claims:
                     lines = claims.strip().split("\n")
                     claims_list = [line.lstrip('* ').strip() for line in lines if line.startswith('* ')]
@@ -57,6 +65,7 @@ if st.button("Get Detail Claims and validate"):
                     # st.write(claims_list)
                     st.write(f"There are {len(claims_list)} claims in the given video. Below are the validation for each claim")
                     for i in range(len(claims_list)): 
+                        st.write(f"-> Claim {i+1}")
                         response= generate_gemini_keywords(claims= claims_list[i], keyword_prompt=Max_three_words_extraction)
                         print(i+1)
                         # if response:
@@ -88,7 +97,7 @@ if st.button("Get Detail Claims and validate"):
                             # print(df)
                             # print(df.head())
                             logging.info("Ranking articles based on journal rankings")
-                            df1= pd.read_csv('Youtube_Summarizer//journal_rankings.csv')
+                            df1= pd.read_csv('C://Users//user//Documents//YTSummarizerGit_rep//Youtube_Summarizer//journal_rankings.csv')
                             # print(df1)
                             df_ranked= ranked_df(df,df1)
                             # print(df_ranked)
@@ -110,10 +119,14 @@ if st.button("Get Detail Claims and validate"):
                             st.write("PubMed RAG Output")
                             st.write(f"For the claim ->{claims_list[i]}, the validation summary is")
                             st.write(result_qa)
-        except:
-            print("")
-        if transcript_text == None:
-            st.error("No Trascript Found. Please provide a valid video!")
+        except IndexError:
+            st.error("Please provide a youtube link for validation!")
+        except TranscriptsDisabled:
+            st.error("Trascripts are disabled for this video. Cant generate claims as of now.")
+        except NoTranscriptFound:
+            st.error("No Trascript Found. Please provide a valid video with English audio!")
+        # if transcript_text == None:
+        #     st.error("No Trascript Found. Please provide a valid video!")
         
 
 

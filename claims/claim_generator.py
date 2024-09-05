@@ -5,7 +5,7 @@ import google.generativeai as genai
 
 from youtube_transcript_api import YouTubeTranscriptApi
 from langchain_openai import ChatOpenAI
-# from google.generativeai.errors import GenerativeAIError
+from google.generativeai import errors
 
 model_config = {
   "temperature": 0,
@@ -53,13 +53,14 @@ def generate_gemini_keywords(claims, keyword_prompt):
         else:
             raise ValueError("The response does not contain a valid 'text' attribute. Check the response object for details.")
     
+    
     except ValueError as ve:
         # Handle the specific ValueError raised if the 'text' attribute is missing
         print(f"ValueError: {ve}")
         # You might want to log the response or take corrective action
         return None
     
-    except GenerativeAIError as ge:
+    except errors.GenerativeAIError as ge:
         # Handle any errors specific to the Generative AI library
         print(f"GenerativeAIError: {ge}")
         # Log the error or take corrective action
