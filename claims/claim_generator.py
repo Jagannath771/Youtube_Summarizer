@@ -5,7 +5,6 @@ import google.generativeai as genai
 
 from youtube_transcript_api import YouTubeTranscriptApi
 from langchain_openai import ChatOpenAI
-from google.generativeai import errors
 
 model_config = {
   "temperature": 0,
@@ -59,13 +58,6 @@ def generate_gemini_keywords(claims, keyword_prompt):
         print(f"ValueError: {ve}")
         # You might want to log the response or take corrective action
         return None
-    
-    except errors.GenerativeAIError as ge:
-        # Handle any errors specific to the Generative AI library
-        print(f"GenerativeAIError: {ge}")
-        # Log the error or take corrective action
-        return None
-
     except Exception as e:
         # Handle any other unforeseen errors
         print(f"An unexpected error occurred: {e}")

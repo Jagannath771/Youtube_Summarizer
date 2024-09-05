@@ -119,11 +119,20 @@ class PubMedScraper:
             results = []
             for pmid in id_list:
                 result = await self.fetch_pubmed_record(pmid, session)
-                results.append(result)
+                if result is not None:  # Only add non-None results
+                    results.append(result)
                 await asyncio.sleep(1)  # Add a 1-second delay between requests
-
+                print(f"Processed PMID: {pmid}")
+            
+            if not results:  # Check if results list is empty
+                print("No valid results found.")
+                return pd.DataFrame()  # Return an empty DataFrame
+            
             return pd.DataFrame(results)
 
     def run(self, topics, date_range):
         full_query = self.build_query(topics, date_range)
-        return asyncio.run(self.scrape(full_query))
+        df = asyncio.run(self.scrape(full_query))
+        if df.empty:
+            print("No results were found for the given query.")
+        return df
