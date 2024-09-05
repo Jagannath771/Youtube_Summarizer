@@ -1,12 +1,11 @@
-# scraper.py
-from Bio import Entrez
-import xml.etree.ElementTree as ET
-import aiohttp
-from aiohttp import ClientSession
 import asyncio
+import aiohttp
+import xml.etree.ElementTree as ET
+from Bio import Entrez
 import pandas as pd
+from concurrent.futures import ThreadPoolExecutor
 import time
-from claims import logging
+import logging
 
 """
 A scrapped to extract pubmed articles. 
@@ -20,110 +19,135 @@ We take list of claim keywords as input and do the following.
 5. Store the abstract, title, journal, conclusion (if exists) into a pandas dataframe.
 """
 
+
+
 class PubMedScraper:
-    def __init__(self, email, api_key):
+    def __init__(self, email, api_key, max_concurrent_requests=10):
         self.email = email
         self.api_key = api_key
         Entrez.email = email
+        Entrez.api_key = api_key
+        self.semaphore = asyncio.Semaphore(max_concurrent_requests)
+        self.session = None
+        self.requests_per_second = 10 if api_key else 3
+        self.request_times = []
+        self.lock = asyncio.Lock()
+
+    async def __aenter__(self):
+        self.session = aiohttp.ClientSession()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.session.close()
 
     def build_query(self, topics, date_range):
-        queries = []
-        if topics:
-            topic_queries = ['{}[Title/Abstract]'.format(topic) for topic in topics]
-            queries.append('(' + ' AND '.join(topic_queries) + ')')
-        full_query = ' AND '.join(queries) + ' AND ' + date_range
+        queries = ['{}[Title/Abstract]'.format(topic) for topic in topics]
+        full_query = f"({' AND '.join(queries)}) AND {date_range}"
         return full_query
 
-    async def fetch_pmc_conclusions(self, pmcid, session):
-        base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/"
-        efetch_url = f"{base_url}efetch.fcgi?db=pmc&id={pmcid}&retmode=xml&api_key={self.api_key}"
+    async def rate_limit(self):
+        async with self.lock:
+            current_time = time.time()
+            self.request_times = [t for t in self.request_times if current_time - t < 1]
+            if len(self.request_times) >= self.requests_per_second:
+                sleep_time = 1 - (current_time - self.request_times[0])
+                if sleep_time > 0:
+                    await asyncio.sleep(sleep_time)
+            self.request_times.append(time.time())
+
+    async def fetch_with_rate_limit(self, url):
+        await self.rate_limit()
+        async with self.session.get(url) as response:
+            if response.status != 200:
+                raise Exception(f"HTTP {response.status}")
+            return await response.text()
+
+    async def fetch_with_semaphore(self, url):
+        async with self.semaphore:
+            return await self.fetch_with_rate_limit(url)
+
+    async def fetch_pmc_conclusions(self, pmcid):
+        efetch_url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id={pmcid}&retmode=xml&api_key={self.api_key}"
 
         try:
-            async with session.get(efetch_url) as response:
-                if response.status != 200:
-                    print(f"Error fetching PMC article: HTTP {response.status}")
-                    return f"Failed to fetch PMC content for {pmcid}: HTTP {response.status}"
-                content = await response.text()
-                #print(f"Received XML content for {pmcid}: {content[:200]}...")
+            content = await self.fetch_with_semaphore(efetch_url)
+            root = ET.fromstring(content)
 
-                root = ET.fromstring(content)
+            conclusions = ""
+            for section in root.findall(".//sec"):
+                section_title = section.find("title")
+                if section_title is not None and "conclusion" in section_title.text.lower():
+                    conclusions = " ".join(p.text for p in section.findall(".//p") if p.text)
+                    break
 
-                conclusions = ""
-                for section in root.findall(".//sec"):
-                    section_title = section.find("title")
-                    if section_title is not None and section_title.text and "conclusion" in section_title.text.lower():
-                        for p in section.findall(".//p"):
-                            conclusions += ET.tostring(p, encoding='unicode', method='text') + "\n"
-                        break
-
-                if not conclusions:
-                    logging.info(f"Conclusions section not found for {pmcid}")
-                    return f"Conclusions section not found in the article for {pmcid}."
-
-                return conclusions.strip()
-     
+            return conclusions.strip() if conclusions else "Conclusions section not found."
         except Exception as e:
-            logging.info(f"Error fetching PMC article {pmcid}: {e}")
-            return f"Failed to fetch PMC content for {pmcid}: {str(e)}"
+            logging.error(f"Error fetching PMC content for {pmcid}: {str(e)}")
+            return f"Failed to fetch PMC content: {str(e)}"
 
-    async def fetch_pmcid_and_conclusions(self, pmid, session):
+    async def fetch_pmcid_and_conclusions(self, pmid):
+        elink_url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pubmed&db=pmc&id={pmid}&retmode=xml&api_key={self.api_key}"
+
         try:
-            base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/"
-            elink_url = f"{base_url}elink.fcgi?dbfrom=pubmed&db=pmc&id={pmid}&retmode=xml&api_key={self.api_key}"
-            
-            async with session.get(elink_url) as response:
-                if response.status != 200:
-                    return None, "No PMC article available"
-                
-                content = await response.text()
-                root = ET.fromstring(content)
-                pmcid_element = root.find(".//LinkSetDb/Link/Id")
-                if pmcid_element is not None:
-                    pmcid = f"PMC{pmcid_element.text}"
-                    conclusions = await self.fetch_pmc_conclusions(pmcid, session)
-                    return pmcid, conclusions
-                else:
-                    return None, "No PMC article available"
-        except Exception as e:
-            logging.info(f"Error fetching PMC article: {e}")
-            return None, "Failed to fetch PMC article"
+            content = await self.fetch_with_semaphore(elink_url)
+            root = ET.fromstring(content)
+            pmcid_element = root.find(".//LinkSetDb/Link/Id")
 
-    async def fetch_pubmed_record(self, pmid, session):
-        handle = Entrez.efetch(db='pubmed', id=pmid, retmode='xml')
-        records = Entrez.read(handle)
-        
-        for record in records['PubmedArticle']:
-            title = record['MedlineCitation']['Article']['ArticleTitle']
-            abstract = ' '.join(record['MedlineCitation']['Article']['Abstract']['AbstractText']) if 'Abstract' in record['MedlineCitation']['Article'] and 'AbstractText' in record['MedlineCitation']['Article']['Abstract'] else ''
-            journal = record['MedlineCitation']['Article']['Journal']['Title']
-            url = f"https://www.ncbi.nlm.nih.gov/pubmed/{pmid}"
-            
-            pmcid, conclusions = await self.fetch_pmcid_and_conclusions(pmid, session)
-            
-            return {
-                'PMID': pmid,
-                'Title': title,
-                'Abstract': abstract,
-                'Journal': journal,
-                'URL': url,
-                'PMCID': pmcid,
-                'Conclusions': conclusions
-            }
+            if pmcid_element is not None:
+                pmcid = f"PMC{pmcid_element.text}"
+                conclusions = await self.fetch_pmc_conclusions(pmcid)
+                return pmcid, conclusions
+            else:
+                return None, "No PMC article available"
+        except Exception as e:
+            logging.error(f"Error fetching PMCID for {pmid}: {str(e)}")
+            return None, f"Failed to fetch PMC article: {str(e)}"
+
+    async def fetch_pubmed_record(self, pmid):
+        await self.rate_limit()
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(self._fetch_pubmed_record, pmid)
+            return await asyncio.get_event_loop().run_in_executor(None, future.result)
+
+    def _fetch_pubmed_record(self, pmid):
+        try:
+            handle = Entrez.efetch(db='pubmed', id=pmid, retmode='xml', api_key=self.api_key)
+            records = Entrez.read(handle)
+
+            for record in records['PubmedArticle']:
+                article = record['MedlineCitation']['Article']
+                return {
+                    'PMID': pmid,
+                    'Title': article['ArticleTitle'],
+                    'Abstract': ' '.join(article['Abstract']['AbstractText']) if 'Abstract' in article and 'AbstractText' in article['Abstract'] else '',
+                    'Journal': article['Journal']['Title'],
+                    'URL': f"https://www.ncbi.nlm.nih.gov/pubmed/{pmid}"
+                }
+        except Exception as e:
+            logging.error(f"Error fetching PubMed record for {pmid}: {str(e)}")
+            return {'PMID': pmid, 'Error': str(e)}
+
+    async def process_pmid(self, pmid):
+        record = await self.fetch_pubmed_record(pmid)
+        pmcid, conclusions = await self.fetch_pmcid_and_conclusions(pmid)
+        record.update({'PMCID': pmcid, 'Conclusions': conclusions})
+        return record
 
     async def scrape(self, full_query):
-        async with ClientSession() as session:
-            handle = Entrez.esearch(db='pubmed', retmax=11, term=full_query)
-            record = Entrez.read(handle)
-            id_list = record['IdList']
+        await self.rate_limit()
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(self._esearch, full_query)
+            id_list = await asyncio.get_event_loop().run_in_executor(None, future.result)
 
-            results = []
-            for pmid in id_list:
-                result = await self.fetch_pubmed_record(pmid, session)
-                results.append(result)
-                await asyncio.sleep(1)  # Add a 1-second delay between requests
+        tasks = [self.process_pmid(pmid) for pmid in id_list]
+        results = await asyncio.gather(*tasks)
+        return pd.DataFrame(results)
 
-            return pd.DataFrame(results)
+    def _esearch(self, full_query):
+        handle = Entrez.esearch(db='pubmed', retmax=10, term=full_query, api_key=self.api_key)
+        record = Entrez.read(handle)
+        return record['IdList']
 
-    def run(self, topics, date_range):
+    async def run(self, topics, date_range):
         full_query = self.build_query(topics, date_range)
-        return asyncio.run(self.scrape(full_query))
+        return await self.scrape(full_query)
