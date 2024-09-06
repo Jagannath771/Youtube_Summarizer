@@ -4,7 +4,7 @@ load_dotenv() ##Load all the new environment variables
 import google.generativeai as genai
 
 from youtube_transcript_api import YouTubeTranscriptApi
-from langchain_openai import ChatOpenAI
+import openai
 
 model_config = {
   "temperature": 0,
@@ -12,6 +12,16 @@ model_config = {
   "top_k": 1,
 }
 
+def health_video_check(prompt, summary_text):
+    
+    model = genai.GenerativeModel("gemini-pro", generation_config=model_config)
+    response = model.generate_content(prompt + summary_text)
+    
+    answer = response.text.strip().lower().split()
+    answer=set(answer)
+    print("Response:", answer)
+    # Return True if the response contains "true", otherwise False
+    return "true" in answer
 
 def extract_transript_details(video_id):
     try:

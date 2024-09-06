@@ -49,12 +49,13 @@ if st.button("Get Detail Claims and validate"):
     placeholder = st.empty()
     with placeholder.container():
         try:
-            transcript_text = extract_transript_details(video_id)
+            # video_id = extract_youtube_id(youtube_link)
+            transcript_text = extract_transript_details(video_id)   
             if transcript_text:
                 summary = generate_gemini_content(transcript_text, YoutubeSummary_task)
             if summary:
                 claims = generate_gemini_claims(summary, ClaimGenerator_task)
-                if not is_health_video(claims):
+                if not health_video_check(Youtube_healh_check, claims):
                     st.error("Please provide link of only a health related video in English!")
                     st.stop()
                 if claims:

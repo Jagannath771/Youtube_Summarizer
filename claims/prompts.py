@@ -35,3 +35,5 @@ Format Instructions: {format_instructions}
 
 Max_three_words_extraction="""You are a medical researcher who wants to check the validity of the following claim by searching for articles from pubmed. 
 Extract at most 3 medical/health/nutrition related keywords summarizing the claim. The keywords should be single word as much as possible"""
+
+Youtube_healh_check = "Is the following YouTube video summary related to health or fitness? Answer only with True or False.\n\nSummary: "
