@@ -49,7 +49,7 @@ if st.button("Get Detail Claims and validate"):
     placeholder = st.empty()
     with placeholder.container():
         try:
-            transcript_text = extract_transript_details(youtube_link)
+            transcript_text = extract_transript_details(video_id)
             if transcript_text:
                 summary = generate_gemini_content(transcript_text, YoutubeSummary_task)
             if summary:

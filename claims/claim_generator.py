@@ -13,10 +13,8 @@ model_config = {
 }
 
 
-def extract_transript_details(youtube_video_url):
+def extract_transript_details(video_id):
     try:
-        video_id=youtube_video_url.split("=")[1]
-        # print(video_id)
         transcript_text=YouTubeTranscriptApi.get_transcript(video_id)
         transcript=""
         for i in transcript_text:
