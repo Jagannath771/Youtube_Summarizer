@@ -39,7 +39,7 @@ youtube_link = st.text_input("Enter Youtube Video Link for a health-related vide
 search_button=st.button("🔍")
 try:
     if youtube_link or search_button:
-         video_id = youtube_link.split("v=")[1]
+         video_id = extract_youtube_id(youtube_link)
          st.markdown("Verify the link with the thumbnail below and click the 'Get Detail Notes' Button")
          st.image(f"http://img.youtube.com/vi/{video_id}/hqdefault.jpg", use_column_width=True)
 except IndexError:

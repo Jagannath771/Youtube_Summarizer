@@ -235,3 +235,23 @@ def is_health_video(claims):
             if count==3:
                 return True
     return False
+
+
+import re
+
+def extract_youtube_id(url):
+    # List of regular expressions to match various YouTube URL formats
+    patterns = [
+        r'(?:v=|\/)([0-9A-Za-z_-]{11}).*',  # Standard and short URL
+        r'(?:embed\/|v\/|youtu.be\/)([0-9A-Za-z_-]{11})',  # Embedded and youtu.be URL
+        r'(?:watch\?)?(?:feature=player_embedded&)?(?:v=)?(?:video_ids=)?([0-9A-Za-z_-]{11})',  # Various watch URLs
+        r'(?:shorts\/)([0-9A-Za-z_-]{11})',  # YouTube Shorts
+    ]
+    
+    # Try each pattern
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+    
+    return None
