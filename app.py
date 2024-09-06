@@ -29,7 +29,7 @@ from youtube_transcript_api._errors import *
 
 # Load environment variables
 load_dotenv()
-# langchain_openai.configure(api_key=os.getenv("OPENAI_API_KEY"))
+genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
 email = "karthikamaravadi1234@gmail.com"
 api_key = os.getenv('PUBMED_API_KEY')
 st.set_page_config(layout="wide")
