@@ -29,7 +29,7 @@ from youtube_transcript_api._errors import *
 
 # Load environment variables
 load_dotenv()
-# langchain_openai.configure(api_key=os.getenv("OPENAI_API_KEY"))
+genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
 email = "karthikamaravadi1234@gmail.com"
 api_key = os.getenv('PUBMED_API_KEY')
 st.set_page_config(layout="wide")
@@ -64,13 +64,13 @@ def home_page():
     col2.write('')
     col2.write('')
     search_button=col2.button("🔍")
-    try:
-        if search_button:
-            video_id = extract_youtube_id(youtube_link)
-            col3.markdown("Verify the link with the thumbnail below and click the 'Get Detail Notes' Button")
-            col3.image(f"http://img.youtube.com/vi/{video_id}/hqdefault.jpg", use_column_width=True)
-    except IndexError:
-        st.error("Please provide a youtube link for validation!")
+    if search_button:
+        video_id = extract_youtube_id(youtube_link)
+        if video_id==None or "":
+            st.error("Please provide a youtube link for validation!")
+            st.stop()
+        col3.markdown("Verify the link with the thumbnail below and click the 'Get Detail Notes' Button")
+        col3.image(f"http://img.youtube.com/vi/{video_id}/hqdefault.jpg", use_column_width=True)
     if col1.button("Get Detail Claims and validate",type="primary"):
         navigate_to("claims")
 
@@ -88,7 +88,7 @@ def Claims(ytlnk):
             if summary:
                 claims = generate_gemini_claims(summary, ClaimGenerator_task)
                 if not health_video_check(Youtube_healh_check,claims):
-                    st.error("Please provide link of only a health related video in English!")
+                    st.error("Please provide link of only a health related video in English containing captions!")
                     st.stop()
                 if claims:
                     lines = claims.strip().split("\n")
@@ -152,12 +152,8 @@ def Claims(ytlnk):
                             st.write("PubMed RAG Output")
                             st.write(f"For the claim ->{claims_list[i]}, the validation summary is")
                             st.write(result_qa)
-        except IndexError:
+        except AssertionError:
             st.error("Please provide a youtube link for validation!")
-        except TranscriptsDisabled:
-            st.error("Trascripts are disabled for this video. Cant generate claims as of now.")
-        except NoTranscriptFound:
-            st.error("No Trascript Found. Please provide a valid video with English audio!")
         
 
 if st.session_state.page == 'home':

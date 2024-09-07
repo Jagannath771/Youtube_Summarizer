@@ -112,7 +112,7 @@ class PubMedScraper:
 
     async def scrape(self, full_query):
         async with ClientSession() as session:
-            handle = Entrez.esearch(db='pubmed', retmax=11, term=full_query)
+            handle = Entrez.esearch(db='pubmed', retmax=10, term=full_query)
             record = Entrez.read(handle)
             id_list = record['IdList']
 
