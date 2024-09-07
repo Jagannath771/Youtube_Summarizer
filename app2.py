@@ -152,7 +152,7 @@ def home_page():
             st.markdown('<div class="button-container">', unsafe_allow_html=True)
             youtube_link = st.text_input("🎥 Enter YouTube Video Link:")
             os.environ['YOUTUBE_LINK'] = youtube_link
-            search_button = st.button("🔍 Verify Link")
+            search_button = st.button("🔍")
             st.markdown('</div>', unsafe_allow_html=True)
         
         if search_button:
@@ -198,8 +198,8 @@ def Claims(ytlnk):
                     
                     st.markdown(f"### 📝 Found {len(claims_list)} claims in the video.", unsafe_allow_html=True)
                     
-                    for i, claim in enumerate(claims_list, 1):
-                        st.markdown(f"#### 🔹 **Claim {i}:**", unsafe_allow_html=True)
+                    for i, claim in enumerate(claims_list, 0):
+                        st.markdown(f"#### 🔹 **Claim {i+1}:**", unsafe_allow_html=True)
                         st.markdown(f"<div style='font-size: 1.2rem; color: #e0e0e0;'>{claim}</div>", unsafe_allow_html=True)
                         
                         # Claim validation process
@@ -212,7 +212,7 @@ def Claims(ytlnk):
                         
                         if df.empty:
                             result_qa = generate_chain_results1({"claim": claim})
-                            st.markdown(f"#### ✅ **AI Validation Result for Claim {i}:**", unsafe_allow_html=True)
+                            st.markdown(f"#### ✅ **AI Validation Result for Claim {i+1}:**", unsafe_allow_html=True)
                             if isinstance(result_qa, dict):  # Check if result_qa is a dictionary
                                 claims_formatted = {"claim": claims_list[i]}
                                 result_qa = generate_chain_results1(claims_formatted)
@@ -225,7 +225,7 @@ def Claims(ytlnk):
                             custom_retriever = CustomRetriever(vectorstore=in_memory_store)
                             rag_processor = RAGQueryProcessor(custom_retriever=custom_retriever, gpt_prompt_txt=gpt_prompt_txt)
                             result_qa = rag_processor.process_query_retrieval_qa(claim)
-                            st.markdown(f"#### 🔬 **PubMed Validation Result for Claim {i}:**", unsafe_allow_html=True)
+                            st.markdown(f"#### 🔬 **PubMed Validation Result for Claim {i+1}:**", unsafe_allow_html=True)
                             st.write(result_qa)
         except AssertionError:
             st.error("⚠️ Invalid YouTube link!")
