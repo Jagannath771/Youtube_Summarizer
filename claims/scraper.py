@@ -112,7 +112,7 @@ class PubMedScraper:
 
     async def scrape(self, full_query):
         async with ClientSession() as session:
-            handle = Entrez.esearch(db='pubmed', retmax=10, term=full_query)
+            handle = Entrez.esearch(db='pubmed', retmax=7, term=full_query)
             record = Entrez.read(handle)
             id_list = record['IdList']
 
@@ -121,7 +121,7 @@ class PubMedScraper:
                 result = await self.fetch_pubmed_record(pmid, session)
                 if result is not None:  # Only add non-None results
                     results.append(result)
-                await asyncio.sleep(1)  # Add a 1-second delay between requests
+                await asyncio.sleep(0.1)  # Add a 1-second delay between requests
                 print(f"Processed PMID: {pmid}")
             
             if not results:  # Check if results list is empty

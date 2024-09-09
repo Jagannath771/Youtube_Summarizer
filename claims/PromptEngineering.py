@@ -73,8 +73,7 @@ def generate_chain_results1(claim_formatted):
     gpt_responses = chain.invoke(claim_formatted)
     response_dict = gpt_responses.dict() if hasattr(gpt_responses, 'dict') else gpt_responses
     row = {
-        "Claim": claim_formatted,
-        # "Scientific Validation Summary": response_dict.get("scientific_validation_summary", ""),
+        "Scientific Validation Summary": response_dict.get("scientific_validation_summary", ""),
         "Classification": response_dict.get("classification", ""),
         "Research Summary": response_dict.get("research_summary", ""),
         "Contradictory Claims": response_dict.get("contradictory_claims", "")

@@ -16,3 +16,4 @@ pandas
 aiohttp
 scikit-learn
 nltk
+streamlit_lottie
