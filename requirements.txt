@@ -1,3 +1,4 @@
+--upgrade langchain openai
 youtube-transcript-api==0.6.2
 streamlit
 google-generativeai
