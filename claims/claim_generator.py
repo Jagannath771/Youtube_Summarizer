@@ -25,9 +25,10 @@ def health_video_check(prompt, summary_text):
 
 def extract_transript_details(video_id):
     try:
-        # proxy = {
-        #     'http': 'socks5://bxvojwdh:sivol2wm9ey1@38.154.227.167:5868'
-        #  }
+        proxy = {
+            'http': 'socks5://bxvojwdh:sivol2wm9ey1@38.154.227.167:5868'
+         }
+        YouTubeTranscriptApi.proxies = proxy
         transcript_text=YouTubeTranscriptApi.get_transcript(video_id)
         transcript=""
         for i in transcript_text:
