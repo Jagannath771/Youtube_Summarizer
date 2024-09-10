@@ -60,7 +60,7 @@ gpt_prompt1 = PromptTemplate(
     input_variables=["claim"],
     partial_variables={"format_instructions": parser1.get_format_instructions()},
 )
-chatgpt1=ChatOpenAI(model_name="gpt-4", temperature=0.1, max_tokens= 500)
+chatgpt1=ChatOpenAI(model_name="gpt-4o-mini", temperature=0.1, max_tokens= 500)
 chain = (gpt_prompt1
            |
          chatgpt1
