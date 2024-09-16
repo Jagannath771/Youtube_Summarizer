@@ -24,6 +24,7 @@ from claims.PromptEngineering import *
 from youtube_transcript_api._errors import *
 from streamlit_lottie import st_lottie
 import requests
+import traceback
 
 # Load environment variables
 load_dotenv()
@@ -179,76 +180,99 @@ def home_page():
             st.session_state.page = "claims"
 
 def Claims(ytlnk):
-    # Clear previous content
-    st.empty()
+    try:
+        # Clear previous content
+        st.empty()
 
-    col1, col2, col3 = st.columns([5,5,2])
-    col3.button("🏠 Home", on_click=lambda: navigate_to("home"))
+        col1, col2, col3 = st.columns([5,5,2])
+        col3.button("🏠 Home", on_click=lambda: navigate_to("home"))
 
-    col1.title("🔍 CLAIM VALIDATION", anchor="claim-validation")
-    
-    # Adding some space and styling
-    st.markdown("""<div style="font-size: 1.5rem; color: #ffab00; margin-bottom: 20px;">Claim Validation for Your Video</div>
-                <style>
-        .stApp {
-            background-image: url(https://images.pexels.com/photos/924824/pexels-photo-924824.jpeg);
-            background-size: cover;
-        }
-        </style>
-        """, unsafe_allow_html=True)
-    
-    placeholder = st.empty()
-    
-    with placeholder.container():
-        try:
+        col1.title("🔍 CLAIM VALIDATION", anchor="claim-validation")
+        
+        st.markdown("""<div style="font-size: 1.5rem; color: #ffab00; margin-bottom: 20px;">Claim Validation for Your Video</div>
+                    <style>
+            .stApp {
+                background-image: url(https://images.pexels.com/photos/924824/pexels-photo-924824.jpeg);
+                background-size: cover;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+        
+        placeholder = st.empty()
+        
+        with placeholder.container():
             video_id = extract_youtube_id(ytlnk)
-            transcript_text = extract_transript_details(video_id)
+            if not video_id:
+                st.error("⚠️ Invalid YouTube link!")
+                return
+
+            with st.spinner("Extracting transcript..."):
+                transcript_text = extract_transript_details(video_id)
             
-            if transcript_text:
+            if not transcript_text:
+                st.error("⚠️ Failed to extract transcript. Please check if the video has captions.")
+                return
+
+            with st.spinner("Generating summary..."):
                 summary = generate_gemini_content(transcript_text, YoutubeSummary_task)
+                logging.info(f"Generated summary: {summary[:100]}...")  # Log first 100 chars
             
-            if summary:
+            if not summary:
+                st.error("⚠️ Failed to generate summary. Please try again.")
+                return
+
+            with st.spinner("Generating claims..."):
                 claims = generate_gemini_claims(summary, ClaimGenerator_task)
+                logging.info(f"Generated claims: {claims[:100]}...")  # Log first 100 chars
+            
+            if not claims:
+                st.error("⚠️ Failed to generate claims. Please try again.")
+                return
+
+            if not health_video_check(Youtube_healh_check, claims):
+                st.error("⚠️ Only health-related videos in English with captions are allowed!")
+                return
+
+            lines = claims.strip().split("\n")
+            claims_list = [line.lstrip('* ').strip() for line in lines if line.startswith('* ')]
+            
+            st.markdown(f"### 📝 Found {len(claims_list)} claims in the video.", unsafe_allow_html=True)
+            
+            for i, claim in enumerate(claims_list, 0):
+                st.markdown(f"#### 🔹 **Claim {i+1}:**", unsafe_allow_html=True)
+                st.markdown(f"<div style='font-size: 1.2rem; color: #e0e0e0;'>{claim}</div>", unsafe_allow_html=True)
                 
-                if not health_video_check(Youtube_healh_check, claims):
-                    st.error("⚠️ Only health-related videos in English with captions are allowed!")
-                else:
-                    lines = claims.strip().split("\n")
-                    claims_list = [line.lstrip('* ').strip() for line in lines if line.startswith('* ')]
+                with st.spinner(f"Validating claim {i+1}..."):
+                    # Claim validation process
+                    response = generate_gemini_keywords(claim, Max_three_words_extraction)
+                    openai_embed_model = OpenAIEmbeddings(model='text-embedding-3-small')
+                    topics = extract_keywords(response)
+                    scraper = PubMedScraper(email, api_key)
+                    date_range = '("2000/01/01"[Date - Create] : "2024/07/31"[Date - Create])'
+                    df = scraper.run(topics, date_range)
                     
-                    st.markdown(f"### 📝 Found {len(claims_list)} claims in the video.", unsafe_allow_html=True)
-                    
-                    for i, claim in enumerate(claims_list, 0):
-                        st.markdown(f"#### 🔹 **Claim {i+1}:**", unsafe_allow_html=True)
-                        st.markdown(f"<div style='font-size: 1.2rem; color: #e0e0e0;'>{claim}</div>", unsafe_allow_html=True)
-                        
-                        # Claim validation process
-                        response = generate_gemini_keywords(claim, Max_three_words_extraction)
-                        openai_embed_model = OpenAIEmbeddings(model='text-embedding-3-small')
-                        topics = extract_keywords(response)
-                        scraper = PubMedScraper(email, api_key)
-                        date_range = '("2000/01/01"[Date - Create] : "2024/07/31"[Date - Create])'
-                        df = scraper.run(topics, date_range)
-                        
-                        if df.empty:
-                            result_qa = generate_chain_results1({"claim": claim})
-                            st.markdown(f"#### ✅ **AI Validation Result for Claim {i+1}:**", unsafe_allow_html=True)
-                            if isinstance(result_qa, dict):  # Check if result_qa is a dictionary
-                                claims_formatted = {"claim": claims_list[i]}
-                                result_qa = generate_chain_results1(claims_formatted)
-                                logging.info(f"Final response: {result_qa}") 
-                                st.write(result_qa)
-                        else:
-                            df_ranked = ranked_df(df, pd.read_csv('journal_rankings.csv'))
-                            documents = load_documents(df_ranked)
-                            in_memory_store = InMemoryVectorStore(documents, openai_embed_model)
-                            custom_retriever = CustomRetriever(vectorstore=in_memory_store)
-                            rag_processor = RAGQueryProcessor(custom_retriever=custom_retriever, gpt_prompt_txt=gpt_prompt_txt)
-                            result_qa = rag_processor.process_query_retrieval_qa(claim)
-                            st.markdown(f"#### 🔬 **PubMed Validation Result for Claim {i+1}:**", unsafe_allow_html=True)
+                    if df.empty:
+                        result_qa = generate_chain_results1({"claim": claim})
+                        st.markdown(f"#### ✅ **AI Validation Result for Claim {i+1}:**", unsafe_allow_html=True)
+                        if isinstance(result_qa, dict):
+                            claims_formatted = {"claim": claims_list[i]}
+                            result_qa = generate_chain_results1(claims_formatted)
+                            logging.info(f"Final response for claim {i+1}: {result_qa}")
                             st.write(result_qa)
-        except AssertionError:
-            st.error("⚠️ Invalid YouTube link!")
+                    else:
+                        df_ranked = ranked_df(df, pd.read_csv('journal_rankings.csv'))
+                        documents = load_documents(df_ranked)
+                        in_memory_store = InMemoryVectorStore(documents, openai_embed_model)
+                        custom_retriever = CustomRetriever(vectorstore=in_memory_store)
+                        rag_processor = RAGQueryProcessor(custom_retriever=custom_retriever, gpt_prompt_txt=gpt_prompt_txt)
+                        result_qa = rag_processor.process_query_retrieval_qa(claim)
+                        st.markdown(f"#### 🔬 **PubMed Validation Result for Claim {i+1}:**", unsafe_allow_html=True)
+                        st.write(result_qa)
+
+    except Exception as e:
+        st.error(f"An error occurred: {str(e)}")
+        logging.error(f"Error in Claims function: {str(e)}")
+        logging.error(traceback.format_exc())
 
 def waitlist_page():
     st.empty()
@@ -316,15 +340,18 @@ def waitlist_page():
 
 # Page routing logic
 
-if selection=='About Us':
-    st.session_state.page='about us'
-if selection  == 'Home':
-    if st.session_state.page=='claims':
-        Claims(os.environ.get("YOUTUBE_LINK"))
-    else:
-        home_page()
-# if st.session_state.page == 'claims':
-#     Claims(os.environ.get("YOUTUBE_LINK"))
-if selection  == "About Us":
-    waitlist_page()
-    
+try:
+    # Your page routing logic goes here
+    if selection == 'About Us':
+        st.session_state.page = 'about us'
+    if selection == 'Home':
+        if st.session_state.page == 'claims':
+            Claims(os.environ.get("YOUTUBE_LINK"))
+        else:
+            home_page()
+    if selection == "About Us":
+        waitlist_page()
+except Exception as e:
+    st.error(f"An unexpected error occurred: {str(e)}")
+    logging.error(f"Unexpected error: {str(e)}")
+    logging.error(traceback.format_exc())
