@@ -25,7 +25,6 @@ def health_video_check(prompt, summary_text):
 
 def extract_transript_details(video_id):
     try:
-        # print("123")
         transcript_text=YouTubeTranscriptApi.get_transcript(video_id)
         # print("Yes")
         transcript=""
