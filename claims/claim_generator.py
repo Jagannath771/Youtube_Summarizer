@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv() ##Load all the new environment variables
 import google.generativeai as genai
+from claims.youtube_transcript_downloader import get_transcript
 
 from youtube_transcript_api import YouTubeTranscriptApi
 import openai
@@ -25,16 +26,17 @@ def health_video_check(prompt, summary_text):
 
 def extract_transript_details(video_id):
     try:
-        transcript_text=YouTubeTranscriptApi.get_transcript(video_id)
+        #transcript_text=YouTubeTranscriptApi.get_transcript(video_id)
+        transcript_text = get_transcript(video_id)
         # print("Yes")
-        transcript=""
-        for i in transcript_text:
-            transcript+=" "+i["text"]
+        #transcript=""
+        #for i in transcript_text:
+        #    transcript+=" "+i["text"]
         # print(transcript)
 
     except Exception as e:
         raise e
-    return transcript
+    return transcript_text
 
 def generate_gemini_content(transcript_text, prompt):
     model = genai.GenerativeModel("gemini-pro", generation_config=model_config)
